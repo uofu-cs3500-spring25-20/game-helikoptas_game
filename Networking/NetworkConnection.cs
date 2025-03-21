@@ -15,17 +15,17 @@ public sealed class NetworkConnection : IDisposable
     /// <summary>
     ///   The connection/socket abstraction
     /// </summary>
-    private TcpClient _tcpClient = new();
+    private readonly TcpClient _tcpClient;
 
     /// <summary>
     ///   Reading end of the connection
     /// </summary>
-    private StreamReader? _reader = null;
+    private StreamReader? _reader;
 
     /// <summary>
     ///   Writing end of the connection
     /// </summary>
-    private StreamWriter? _writer = null;
+    private StreamWriter? _writer;
 
     /// <summary>
     ///   Initializes a new instance of the <see cref="NetworkConnection"/> class.
