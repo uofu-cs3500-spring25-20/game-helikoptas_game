@@ -40,13 +40,24 @@ public sealed class NetworkConnection : IDisposable
     public NetworkConnection(TcpClient tcpClient)
     {
         _tcpClient = tcpClient;
-        if (IsConnected)
-        {
-            // Only establish the reader/writer if the provided TcpClient is already connected.
-            _reader = new StreamReader(_tcpClient.GetStream(), Encoding.UTF8);
-            _writer = new StreamWriter(_tcpClient.GetStream(), Encoding.UTF8)
-                { AutoFlush = true }; // AutoFlush ensures data is sent immediately
-        }
+        AttemptEstablishStreams();
+    }
+
+    /// <summary>
+    /// Establish the reader and writer streams, expecting the TcpClient to be successfully connected.
+    /// Will do nothing otherwise.
+    /// </summary>
+    /// <returns> true if the TcpClient is connected and streams were successfully created</returns>
+    private bool AttemptEstablishStreams()
+    {
+        // exit if the socket is not connected
+        if (!IsConnected) return false;
+        
+        _reader = new StreamReader(_tcpClient.GetStream(), Encoding.UTF8);
+        _writer = new StreamWriter(_tcpClient.GetStream(), Encoding.UTF8)
+            { AutoFlush = true }; // AutoFlush ensures data is sent immediately
+        return true;
+
     }
 
     /// <summary>
@@ -73,11 +84,7 @@ public sealed class NetworkConnection : IDisposable
     public void Connect(string host, int port)
     {
         _tcpClient.Connect(host, port);
-
-        // Establish the reader/writer if the provided TcpClient connects successfully.
-        _reader = new StreamReader(_tcpClient.GetStream(), Encoding.UTF8);
-        _writer = new StreamWriter(_tcpClient.GetStream(), Encoding.UTF8)
-            { AutoFlush = true }; // AutoFlush ensures data is sent immediately
+        AttemptEstablishStreams();
     }
 
 
