@@ -4,6 +4,7 @@
 
 using System.Net.Sockets;
 using System.Text;
+
 namespace CS3500.Networking;
 
 /// <summary>
@@ -36,14 +37,15 @@ public sealed class NetworkConnection : IDisposable
     /// <param name="tcpClient">
     ///   An already existing TcpClient
     /// </param>
-    public NetworkConnection( TcpClient tcpClient )
+    public NetworkConnection(TcpClient tcpClient)
     {
         _tcpClient = tcpClient;
-        if ( IsConnected )
+        if (IsConnected)
         {
             // Only establish the reader/writer if the provided TcpClient is already connected.
-            _reader = new StreamReader( _tcpClient.GetStream(), Encoding.UTF8 );
-            _writer = new StreamWriter( _tcpClient.GetStream(), Encoding.UTF8 ) { AutoFlush = true }; // AutoFlush ensures data is sent immediately
+            _reader = new StreamReader(_tcpClient.GetStream(), Encoding.UTF8);
+            _writer = new StreamWriter(_tcpClient.GetStream(), Encoding.UTF8)
+                { AutoFlush = true }; // AutoFlush ensures data is sent immediately
         }
     }
 
@@ -53,22 +55,14 @@ public sealed class NetworkConnection : IDisposable
     ///     Create a network connection object.  The tcpClient will be unconnected at the start.
     ///   </para>
     /// </summary>
-    public NetworkConnection( )
-        : this( new TcpClient( ) )
+    public NetworkConnection() : this(new TcpClient())
     {
     }
 
     /// <summary>
     /// Gets a value indicating whether the socket is connected.
     /// </summary>
-    public bool IsConnected
-    {
-        get
-        {
-            // TODO: implement this
-            throw new NotImplementedException();
-        }
-    }
+    public bool IsConnected => _tcpClient.Connected;
 
 
     /// <summary>
@@ -76,10 +70,14 @@ public sealed class NetworkConnection : IDisposable
     /// </summary>
     /// <param name="host"> The URL or IP address, e.g., www.cs.utah.edu, or  127.0.0.1. </param>
     /// <param name="port"> The port, e.g., 11000. </param>
-    public void Connect( string host, int port )
+    public void Connect(string host, int port)
     {
-        // TODO: implement this
-        throw new NotImplementedException();
+        _tcpClient.Connect(host, port);
+
+        // Establish the reader/writer if the provided TcpClient connects successfully.
+        _reader = new StreamReader(_tcpClient.GetStream(), Encoding.UTF8);
+        _writer = new StreamWriter(_tcpClient.GetStream(), Encoding.UTF8)
+            { AutoFlush = true }; // AutoFlush ensures data is sent immediately
     }
 
 
@@ -92,10 +90,14 @@ public sealed class NetworkConnection : IDisposable
     ///   connected), throw an InvalidOperationException.
     /// </summary>
     /// <param name="message"> The string of characters to send. </param>
-    public void Send( string message )
+    public void Send(string message)
     {
-        // TODO: Implement this
-        throw new NotImplementedException();
+        // if not connected, throw
+        if (!IsConnected)
+            throw new InvalidOperationException("Connection not connected");
+
+        // otherwise, we can safely assume _writer is initialized
+        _writer!.WriteLine(message);
     }
 
 
@@ -106,27 +108,39 @@ public sealed class NetworkConnection : IDisposable
     ///   connected), throw an InvalidOperationException.
     /// </summary>
     /// <returns> The contents of the message. </returns>
-    public string ReadLine( )
+    public string ReadLine()
     {
-        // TODO: implement this
-        throw new NotImplementedException();
+        // if not connected, throw
+        if (!IsConnected)
+            throw new InvalidOperationException("Connection not established");
 
+        // otherwise, we can safely assume _reader is initialized
+        try
+        {
+            return _reader!.ReadLine();
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine("Connection closed unexpectedly: " + e);
+            throw;
+        }
     }
 
     /// <summary>
     ///   If connected, disconnect the connection and clean 
     ///   up (dispose) any streams.
     /// </summary>
-    public void Disconnect( )
+    public void Disconnect()
     {
-        //TODO: implement this
-        throw new NotImplementedException();
+        _reader?.Dispose();
+        _writer?.Dispose();
+        _tcpClient.Close();
     }
 
     /// <summary>
     ///   Automatically called with a using statement (see IDisposable)
     /// </summary>
-    public void Dispose( )
+    public void Dispose()
     {
         Disconnect();
     }
